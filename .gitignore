@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDEs
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build outputs
+dist
+build
+coverage
+
+# System
+.DS_Store
+Thumbs.db
+
+# Uploads (Keep the folder, ignore content usually, but for demo maybe keep images? User uploaded images... let's ignore new ones or allow them? 
+# Usually we ignore uploads. But for this demo, user pushed them. Let's ignore them to be safe.)
+uploads/*
+!uploads/.gitkeep
