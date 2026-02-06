@@ -19,6 +19,10 @@ export interface IBook extends Document {
     isAvailable: boolean;
     status: 'available' | 'sold' | 'rented';
     distance?: number; // Calculated field usually
+    // New Fields for Textbook/School support
+    school?: string;
+    board?: string; // e.g. CBSE, ICSE, Ministry
+    classLevel?: string; // e.g. Grade 10, Year 12
     createdAt: Date;
     updatedAt: Date;
 }
@@ -50,6 +54,10 @@ const bookSchema: Schema = new Schema(
         },
         isAvailable: { type: Boolean, default: true },
         status: { type: String, enum: ['available', 'sold', 'rented'], default: 'available' },
+        // New Schema Fields
+        school: { type: String },
+        board: { type: String },
+        classLevel: { type: String },
     },
     { timestamps: true }
 );

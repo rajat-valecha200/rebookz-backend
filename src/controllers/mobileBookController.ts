@@ -7,16 +7,16 @@ import Book from '../models/Book';
 export const getMobileBookFeed = async (req: Request, res: Response) => {
     try {
         const { lat, lng, radius, limit, page } = req.query;
-        const pageNum = Number(page) || 1;
-        const limitNum = Number(limit) || 10;
-        const maxDistance = Number(radius) || 50000; // Default 50km if using strict filter, but we want all books.
+        const pageNum = parseInt(page as string) || 1;
+        const limitNum = parseInt(limit as string) || 10;
+        const maxDistance = parseFloat(radius as string) || 50000;
 
         let books;
         let total = 0;
 
         if (lat && lng) {
-            const userLat = Number(lat);
-            const userLng = Number(lng);
+            const userLat = parseFloat(lat as string);
+            const userLng = parseFloat(lng as string);
 
             // Using aggregation pipeline to get sorted results
             // $geoNear MUST be the first stage
@@ -24,11 +24,9 @@ export const getMobileBookFeed = async (req: Request, res: Response) => {
                 {
                     $geoNear: {
                         near: { type: 'Point', coordinates: [userLng, userLat] },
-                        distanceField: 'distance', // Output field with distance in meters
+                        distanceField: 'distance', // Output field with distance
+                        distanceMultiplier: 0.001, // Convert to KM
                         spherical: true,
-                        // maxDistance: maxDistance, // Commented out to "get others" too? 
-                        // If we want "nearby first THEN others", $geoNear sorts by distance. 
-                        // If we unlimit maxDistance, it processes all documents with geometry.
                     }
                 },
                 {

@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/authMiddleware';
+import generateToken from '../utils/generateToken';
 
 // @desc    Get all users with pagination
 // @route   GET /api/users
@@ -12,8 +12,8 @@ const getUsers = async (req: AuthRequest, res: Response) => {
         return;
     }
 
-    const pageSize = Number(req.query.limit) || 10;
-    const page = Number(req.query.page) || 1;
+    const pageSize = parseInt(req.query.limit as string) || 10;
+    const page = parseInt(req.query.page as string) || 1;
 
     const keyword = req.query.keyword
         ? {
@@ -60,4 +60,147 @@ const deleteUser = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export { getUsers, deleteUser };
+// @desc    Update User Profile (Self)
+// @route   PUT /api/users/profile
+// @access  Private
+const updateProfile = async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
+
+    if (user) {
+        user.name = req.body.name || user.name;
+        user.email = req.body.email || user.email;
+        if (req.body.age) user.age = req.body.age;
+        if (req.body.dob) user.dob = req.body.dob;
+        if (req.body.gender) user.gender = req.body.gender;
+
+        const updatedUser = await user.save();
+
+        res.json({
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            role: updatedUser.role,
+            age: updatedUser.age,
+            dob: updatedUser.dob,
+            gender: updatedUser.gender,
+            token: generateToken((updatedUser._id as unknown) as string),
+        });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};
+
+export { getUsers, deleteUser, suspendUser, updateProfile, toggleFavorite, getFavorites, createUser };
+
+// @desc    Create User (Admin)
+// @route   POST /api/users
+// @access  Private/Admin
+const createUser = async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== 'admin') {
+        res.status(403).json({ message: 'Not authorized as admin' });
+        return;
+    }
+
+    const { name, email, phone, password, role } = req.body;
+
+    const userExists = await User.findOne({
+        $or: [{ email }, { phone }]
+    });
+
+    if (userExists) {
+        res.status(400).json({ message: 'User already exists' });
+        return;
+    }
+
+    const user = await User.create({
+        name,
+        email,
+        phone,
+        password: password || '123456', // Default password if not provided? Or required.
+        role: role || 'user'
+    });
+
+    if (user) {
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+        });
+    } else {
+        res.status(400).json({ message: 'Invalid user data' });
+    }
+};
+
+// @desc    Get User Favorites
+// @route   GET /api/users/favorites
+// @access  Private
+const getFavorites = async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user?._id).populate('favorites');
+
+    if (user) {
+        // Need to populate more? Book -> Seller?
+        // Deep population might be needed: .populate({ path: 'favorites', populate: { path: 'seller', select: 'name' } })
+        const populatedUser = await User.findById(req.user?._id).populate({
+            path: 'favorites',
+            populate: { path: 'seller', select: 'name email phone' }
+        });
+
+        res.json({ favorites: populatedUser?.favorites || [] });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};
+
+// @desc    Toggle Favorite Book
+// @route   PUT /api/users/favorites/:id
+// @access  Private
+const toggleFavorite = async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
+    const bookId = req.params.id;
+
+    if (user) {
+        if (!user.favorites) user.favorites = [];
+
+        // Check if already favorited
+        const index = user.favorites.indexOf(bookId as any);
+
+        if (index > -1) {
+            // Remove
+            user.favorites.splice(index, 1);
+            await user.save();
+            res.json({ message: 'Removed from favorites', isFavorited: false });
+        } else {
+            // Add
+            user.favorites.push(bookId as any);
+            await user.save();
+            res.json({ message: 'Added to favorites', isFavorited: true });
+        }
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};
+
+// @desc    Suspend/Unsuspend User (Admin)
+// @route   PUT /api/users/:id/suspend
+// @access  Private/Admin
+const suspendUser = async (req: AuthRequest, res: Response) => {
+    // Check if admin
+    if (req.user?.role !== 'admin') {
+        res.status(403).json({ message: 'Not authorized as admin' });
+        return;
+    }
+
+    const { isSuspended } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (user) {
+        user.isSuspended = isSuspended;
+        await user.save();
+        res.json({ message: `User ${isSuspended ? 'suspended' : 'activated'}`, isSuspended: user.isSuspended });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};

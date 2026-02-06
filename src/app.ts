@@ -8,6 +8,7 @@ import categoryRoutes from './routes/categoryRoutes';
 import adminRoutes from './routes/adminRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import mobileRoutes from './routes/mobileRoutes';
+import requestRoutes from './routes/requestRoutes';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/mobile', mobileRoutes);
+app.use('/api/requests', requestRoutes);
 
 // Make uploads folder static
 import path from 'path';

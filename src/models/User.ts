@@ -11,8 +11,12 @@ export interface IUser extends Document {
     favorites: mongoose.Types.ObjectId[];
     otp?: string;
     otpExpires?: Date;
+    isSuspended?: boolean;
     createdAt: Date;
     updatedAt: Date;
+    dob?: Date;
+    gender?: 'male' | 'female' | 'other';
+    age?: number;
 }
 
 const userSchema: Schema = new Schema(
@@ -27,6 +31,10 @@ const userSchema: Schema = new Schema(
         favorites: [{ type: Schema.Types.ObjectId, ref: 'Book' }],
         otp: { type: String },
         otpExpires: { type: Date },
+        isSuspended: { type: Boolean, default: false },
+        dob: { type: Date },
+        gender: { type: String, enum: ['male', 'female', 'other'] },
+        age: { type: Number },
     },
     { timestamps: true }
 );

@@ -147,6 +147,7 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
+            isNewUser: !user.email,
         });
         return;
     }
@@ -154,6 +155,11 @@ const verifyOtp = async (req: Request, res: Response) => {
     const user = await User.findOne({ phone });
 
     if (user && (user.otp === otp || otp === '123456')) { // Allow 123456 globally for dev
+        if (user.isSuspended) {
+            res.status(403).json({ message: 'Your account has been suspended. Please contact support.' });
+            return;
+        }
+
         // Clear OTP
         user.otp = undefined;
         user.otpExpires = undefined;
@@ -165,6 +171,7 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
+            isNewUser: !user.email || !user.age, // Flag to trigger onboarding
         });
     } else {
         res.status(400).json({ message: 'Invalid OTP' });

@@ -29,8 +29,8 @@ const getBooks = async (req: Request, res: Response) => {
         filterConditions.status = req.query.status;
     }
 
-    const pageSize = Number(req.query.limit) || 10;
-    const page = Number(req.query.page) || 1;
+    const pageSize = parseInt(req.query.limit as string) || 10;
+    const page = parseInt(req.query.page as string) || 1;
 
     const count = await Book.countDocuments(filterConditions);
     const books = await Book.find(filterConditions)
@@ -75,6 +75,9 @@ const createBook = async (req: AuthRequest, res: Response) => {
         price,
         images,
         location,
+        school,
+        board,
+        classLevel
     } = req.body;
 
     // Convert location to GeoJSON if provided as {lat, lng}
@@ -101,6 +104,9 @@ const createBook = async (req: AuthRequest, res: Response) => {
         images,
         seller: req.user._id,
         location: geoLocation,
+        school,
+        board,
+        classLevel,
         isAvailable: true,
     });
 
@@ -123,6 +129,9 @@ const updateBook = async (req: AuthRequest, res: Response) => {
         price,
         images,
         location,
+        school,
+        board,
+        classLevel,
         isAvailable,
         status
     } = req.body;
@@ -145,6 +154,9 @@ const updateBook = async (req: AuthRequest, res: Response) => {
         book.type = type || book.type;
         book.price = price !== undefined ? price : book.price;
         book.images = images || book.images;
+        book.school = school || book.school;
+        book.board = board || book.board;
+        book.classLevel = classLevel || book.classLevel;
 
         if (location) {
             if ((typeof location.lat === 'number') && (typeof location.lng === 'number')) {

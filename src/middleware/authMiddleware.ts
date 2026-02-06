@@ -43,4 +43,28 @@ const admin = (req: AuthRequest, res: Response, next: NextFunction) => {
     }
 };
 
-export { protect, admin, AuthRequest };
+// Optional Auth: Parses token if present, but doesn't error if missing
+const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+
+            const user = await User.findById(decoded.id).select('-password');
+            if (user) {
+                req.user = user;
+            }
+        } catch (error) {
+            console.error("Optional Auth Token Failed:", error);
+            // Continue without user
+        }
+    }
+    next();
+};
+
+export { protect, admin, optionalAuth, AuthRequest };
