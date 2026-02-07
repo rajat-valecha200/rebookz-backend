@@ -19,7 +19,7 @@ const router = express.Router();
 // Correct approach: `router.post('/', optionalAuth, createTicket)`
 // I will implement `optionalAuth` in `authMiddleware.ts` first.
 
-router.post('/', createTicket); // Public for now (Guest). User attachment logic might need refinement.
+router.post('/', optionalAuth, createTicket); // Public (Guest) but attaches User if logged in
 router.get('/', protect, getTickets); // Admin only (Checked in controller)
 
 export default router;

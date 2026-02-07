@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import generateToken from '../utils/generateToken';
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Auth user & get token (Email/Password for Admin mostly)
 // @route   POST /api/users/login
@@ -147,7 +150,7 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
-            isNewUser: !user.email,
+            isNewUser: !user.email || (!user.dob && !user.age),
         });
         return;
     }
@@ -171,11 +174,62 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
-            isNewUser: !user.email || !user.age, // Flag to trigger onboarding
+            isNewUser: !user.email || (!user.dob && !user.age), // Flag to trigger onboarding
         });
     } else {
         res.status(400).json({ message: 'Invalid OTP' });
     }
 };
 
-export { authUser, registerUser, sendOtp, verifyOtp };
+const googleLogin = async (req: Request, res: Response) => {
+    const { token } = req.body;
+
+    try {
+        // MOCK VERIFICATION for now
+        const payload: any = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+        if (!payload || !payload.email) {
+            res.status(400).json({ message: 'Invalid Google Token' });
+            return;
+        }
+
+        const { email, name, picture, sub } = payload;
+
+        let user = await User.findOne({ email });
+
+        if (user) {
+            res.json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                isNewUser: false,
+                token: generateToken((user._id as unknown) as string),
+            });
+        } else {
+            user = await User.create({
+                name,
+                email,
+                password: sub,
+                profileImage: picture,
+                isGoogleUser: true
+            });
+
+            res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isNewUser: true,
+                token: generateToken((user._id as unknown) as string),
+            });
+        }
+
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(400).json({ message: 'Google Auth Failed' });
+    }
+};
+
+export { authUser, registerUser, sendOtp, verifyOtp, googleLogin };

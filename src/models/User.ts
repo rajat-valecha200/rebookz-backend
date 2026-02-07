@@ -12,6 +12,8 @@ export interface IUser extends Document {
     otp?: string;
     otpExpires?: Date;
     isSuspended?: boolean;
+    isGoogleUser?: boolean;
+    pushToken?: string;
     createdAt: Date;
     updatedAt: Date;
     dob?: Date;
@@ -32,6 +34,8 @@ const userSchema: Schema = new Schema(
         otp: { type: String },
         otpExpires: { type: Date },
         isSuspended: { type: Boolean, default: false },
+        isGoogleUser: { type: Boolean, default: false },
+        pushToken: { type: String },
         dob: { type: Date },
         gender: { type: String, enum: ['male', 'female', 'other'] },
         age: { type: Number },

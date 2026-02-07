@@ -77,7 +77,8 @@ const createBook = async (req: AuthRequest, res: Response) => {
         location,
         school,
         board,
-        classLevel
+        classLevel,
+        sellerPhone
     } = req.body;
 
     // Convert location to GeoJSON if provided as {lat, lng}
@@ -107,6 +108,7 @@ const createBook = async (req: AuthRequest, res: Response) => {
         school,
         board,
         classLevel,
+        sellerPhone,
         isAvailable: true,
     });
 
@@ -133,7 +135,8 @@ const updateBook = async (req: AuthRequest, res: Response) => {
         board,
         classLevel,
         isAvailable,
-        status
+        status,
+        sellerPhone
     } = req.body;
 
     const book = await Book.findById(req.params.id);
@@ -157,6 +160,7 @@ const updateBook = async (req: AuthRequest, res: Response) => {
         book.school = school || book.school;
         book.board = board || book.board;
         book.classLevel = classLevel || book.classLevel;
+        book.sellerPhone = sellerPhone || book.sellerPhone;
 
         if (location) {
             if ((typeof location.lat === 'number') && (typeof location.lng === 'number')) {

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import BookRequest from '../models/BookRequest';
 import { AuthRequest } from '../middleware/authMiddleware';
+import User from '../models/User';
+import { sendPushNotification } from '../utils/sendNotification';
 
 // @desc    Create a book request
 // @route   POST /api/requests
@@ -21,6 +23,18 @@ export const createRequest = async (req: AuthRequest, res: Response) => {
         status: 'active'
     });
 
+    // Broadcast Notification
+    try {
+        const allUsers = await User.find({ _id: { $ne: req.user._id } }).select('_id');
+        const userIds = allUsers.map(u => u._id.toString());
+
+        if (userIds.length > 0) {
+            sendPushNotification(userIds, `New Book Request: ${title}`, { requestId: request._id });
+        }
+    } catch (e) {
+        console.error("Notification Error", e);
+    }
+
     res.status(201).json(request);
 };
 
@@ -40,4 +54,74 @@ export const getRequests = async (req: Request, res: Response) => {
         .sort({ createdAt: -1 });
 
     res.json(requests);
+};
+
+// @desc    Get request by ID
+// @route   GET /api/requests/:id
+// @access  Public
+export const getRequestById = async (req: Request, res: Response) => {
+    try {
+        const request = await BookRequest.findById(req.params.id).populate('user', 'name profileImage phone');
+        if (!request) {
+            res.status(404).json({ message: 'Request not found' });
+            return;
+        }
+        res.json(request);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Update a request
+// @route   PUT /api/requests/:id
+// @access  Private
+export const updateRequest = async (req: AuthRequest, res: Response) => {
+    try {
+        const request = await BookRequest.findById(req.params.id);
+        if (!request) {
+            res.status(404).json({ message: 'Request not found' });
+            return;
+        }
+
+        // Check ownership
+        if (request.user.toString() !== req.user?._id.toString()) {
+            res.status(401).json({ message: 'User not authorized' });
+            return;
+        }
+
+        const { title, description, category } = req.body;
+        request.title = title || request.title;
+        request.description = description || request.description;
+        request.category = category || request.category;
+
+        const updatedRequest = await request.save();
+        res.json(updatedRequest);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Delete a request
+// @route   DELETE /api/requests/:id
+// @access  Private
+export const deleteRequest = async (req: AuthRequest, res: Response) => {
+    try {
+        const request = await BookRequest.findById(req.params.id);
+        if (!request) {
+            res.status(404).json({ message: 'Request not found' });
+            return;
+        }
+
+        // Check ownership
+        if (request.user.toString() !== req.user?._id.toString()) {
+            res.status(401).json({ message: 'User not authorized' });
+            return;
+        }
+
+        await request.deleteOne();
+        res.json({ message: 'Request removed' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
 };

@@ -1,8 +1,9 @@
+import { Request, Response } from 'express';
 import User from '../models/User';
-import { AuthRequest } from '../middleware/authMiddleware';
 import generateToken from '../utils/generateToken';
+import { AuthRequest } from '../middleware/authMiddleware';
 
-// @desc    Get all users with pagination
+
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = async (req: AuthRequest, res: Response) => {
@@ -70,8 +71,21 @@ const updateProfile = async (req: AuthRequest, res: Response) => {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
         if (req.body.age) user.age = req.body.age;
-        if (req.body.dob) user.dob = req.body.dob;
+        if (req.body.dob) {
+            user.dob = req.body.dob;
+            // Calculate age
+            const today = new Date();
+            const birthDate = new Date(req.body.dob);
+            let ageCalc = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                ageCalc--;
+            }
+            user.age = ageCalc;
+        }
+        if (req.body.age) user.age = req.body.age; // Allow manual override but dob takes precedence or adds consistency
         if (req.body.gender) user.gender = req.body.gender;
+        if (req.body.pushToken) user.pushToken = req.body.pushToken;
 
         const updatedUser = await user.save();
 

@@ -23,6 +23,7 @@ export interface IBook extends Document {
     school?: string;
     board?: string; // e.g. CBSE, ICSE, Ministry
     classLevel?: string; // e.g. Grade 10, Year 12
+    sellerPhone?: string; // Custom seller phone number
     createdAt: Date;
     updatedAt: Date;
 }
@@ -58,6 +59,7 @@ const bookSchema: Schema = new Schema(
         school: { type: String },
         board: { type: String },
         classLevel: { type: String },
+        sellerPhone: { type: String }, // NEW
     },
     { timestamps: true }
 );

@@ -1,5 +1,5 @@
 import express from 'express';
-import { authUser, registerUser, sendOtp, verifyOtp } from '../controllers/authController';
+import { authUser, registerUser, sendOtp, verifyOtp, googleLogin } from '../controllers/authController'; // Added googleLogin to authController import
 import { protect, admin } from '../middleware/authMiddleware';
 import { getUsers, deleteUser, suspendUser, updateProfile, toggleFavorite, getFavorites, createUser } from '../controllers/userController';
 
@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/login', authUser);
 router.post('/register', registerUser);
+router.post('/google-login', googleLogin); // Added new route
 router.post('/send-otp', sendOtp);
 router.post('/verify-otp', verifyOtp);
 router.route('/').get(protect, admin, getUsers as any).post(protect, admin, createUser as any);
