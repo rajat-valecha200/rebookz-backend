@@ -27,15 +27,41 @@ export const createTicket = async (req: AuthRequest, res: Response) => {
 // @route   GET /api/support
 // @access  Private/Admin
 export const getTickets = async (req: AuthRequest, res: Response) => {
+    let query = {};
+    if (req.user?.role !== 'admin') {
+        query = { user: req.user?._id };
+    }
+
+    const tickets = await SupportTicket.find(query)
+        .populate('user', 'name email phone')
+        .sort({ createdAt: -1 });
+
+    res.json(tickets);
+};
+
+// @desc    Admin reply to ticket
+// @route   PUT /api/support/:id/reply
+// @access  Private/Admin
+export const replyToTicket = async (req: AuthRequest, res: Response) => {
+    const { adminResponse, status } = req.body;
+    const ticketId = req.params.id;
+
     // Verify Admin role
     if (req.user?.role !== 'admin') {
         res.status(403).json({ message: 'Not authorized as admin' });
         return;
     }
 
-    const tickets = await SupportTicket.find({})
-        .populate('user', 'name email phone')
-        .sort({ createdAt: -1 });
+    const ticket = await SupportTicket.findById(ticketId);
 
-    res.json(tickets);
+    if (!ticket) {
+        res.status(404).json({ message: 'Ticket not found' });
+        return;
+    }
+
+    ticket.adminResponse = adminResponse;
+    ticket.status = status || 'closed';
+    await ticket.save();
+
+    res.json(ticket);
 };

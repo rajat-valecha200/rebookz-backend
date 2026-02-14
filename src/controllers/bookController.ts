@@ -81,6 +81,11 @@ const createBook = async (req: AuthRequest, res: Response) => {
         sellerPhone
     } = req.body;
 
+    if (!images || !Array.isArray(images) || images.length === 0) {
+        res.status(400).json({ message: 'At least one image is required' });
+        return;
+    }
+
     // Convert location to GeoJSON if provided as {lat, lng}
     let geoLocation;
     if (location && (typeof location.lat === 'number') && (typeof location.lng === 'number')) {

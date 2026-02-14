@@ -83,16 +83,24 @@ export const updateRequest = async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        // Check ownership
-        if (request.user.toString() !== req.user?._id.toString()) {
+        // Check ownership OR Admin
+        const isOwner = request.user.toString() === req.user?._id.toString();
+        const isAdmin = req.user?.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
             res.status(401).json({ message: 'User not authorized' });
             return;
         }
 
-        const { title, description, category } = req.body;
+        const { title, description, category, status } = req.body;
         request.title = title || request.title;
         request.description = description || request.description;
         request.category = category || request.category;
+
+        // Admin or Owner can update status
+        if (status) {
+            request.status = status;
+        }
 
         const updatedRequest = await request.save();
         res.json(updatedRequest);

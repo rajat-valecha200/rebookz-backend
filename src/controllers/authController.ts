@@ -232,4 +232,31 @@ const googleLogin = async (req: Request, res: Response) => {
     }
 };
 
-export { authUser, registerUser, sendOtp, verifyOtp, googleLogin };
+const dummyLogin = async (req: Request, res: Response) => {
+    const phone = '966500000000';
+    try {
+        let user = await User.findOne({ phone });
+        if (!user) {
+            user = await User.create({
+                phone,
+                name: 'Demo User',
+                email: 'demo@rebookz.com',
+                isGoogleUser: false,
+            });
+        }
+        res.json({
+            _id: user._id,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.role,
+            token: generateToken((user._id as unknown) as string),
+            isNewUser: false,
+        });
+    } catch (error) {
+        console.error('Dummy Login Error:', error);
+        res.status(500).json({ message: 'Dummy login failed' });
+    }
+};
+
+export { authUser, registerUser, sendOtp, verifyOtp, googleLogin, dummyLogin };
