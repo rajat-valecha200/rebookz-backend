@@ -48,7 +48,7 @@ const userSchema: Schema = new Schema(
 );
 
 // Pre-save hook to handle unique/sparse fields
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function () {
     const user = this as any;
     // VERY IMPORTANT: null is treated as a duplicate in MongoDB unique indexes.
     // undefined is ignored by sparse indexes.
@@ -58,7 +58,6 @@ userSchema.pre('save', function (next) {
     if (user.email === null || user.email === '') {
         user.email = undefined;
     }
-    next();
 });
 
 export default mongoose.model<IUser>('User', userSchema);

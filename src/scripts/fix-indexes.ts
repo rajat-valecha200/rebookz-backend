@@ -14,6 +14,7 @@ async function fixIndexes() {
         console.log('Connected.');
 
         const db = mongoose.connection.db;
+        if (!db) throw new Error('Database connection failed - db undefined');
         const collection = db.collection('users');
 
         console.log('Checking existing indexes...');
