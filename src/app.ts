@@ -27,15 +27,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use('/users', userRoutes);
-app.use('/books', bookRoutes);
-app.use('/categories', categoryRoutes);
-app.use('/admin', adminRoutes);
-app.use('/upload', uploadRoutes);
-app.use('/mobile', mobileRoutes);
-app.use('/requests', requestRoutes);
-app.use('/support', supportRoutes);
-app.use('/feedback', feedbackRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/books', bookRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/mobile', mobileRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Make uploads folder static
 import path from 'path';
