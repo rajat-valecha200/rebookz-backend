@@ -223,14 +223,15 @@ const googleLogin = async (req: Request, res: Response) => {
                 token: generateToken((user._id as unknown) as string),
             });
         } else {
-            user = await User.create({
+            const newUserPayload: any = {
                 name,
                 email,
                 password: sub, // Use Google Sub as temporary password
                 profileImage: picture,
                 isGoogleUser: true,
                 role: 'user'
-            });
+            };
+            user = await User.create(newUserPayload);
 
             res.status(201).json({
                 _id: user._id,
@@ -340,14 +341,16 @@ const appleLogin = async (req: Request, res: Response) => {
         } else {
             console.log('Creating new user for Apple Login');
             // New User flow
-            user = await User.create({
+            const newUserPayload: any = {
                 appleId,
                 email,
                 name: appleUser?.name || 'Apple User',
-                password: appleId, // Use appleId as temporary password
+                password: appleId,
                 isAppleUser: true,
                 role: 'user'
-            } as any);
+            };
+
+            user = await User.create(newUserPayload);
 
             res.status(201).json({
                 _id: user._id,
