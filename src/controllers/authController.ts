@@ -185,11 +185,19 @@ const googleLogin = async (req: Request, res: Response) => {
     const { token } = req.body;
 
     try {
-        // MOCK VERIFICATION for now
-        const payload: any = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        // Verify Google Token securely using Official Library
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: [
+                process.env.GOOGLE_CLIENT_ID!, // Web Client ID
+                "423734366253-09dmu1gkn6p20iasn0ch1g6lfc6aapqa.apps.googleusercontent.com" // Android Client ID
+            ],
+        });
+
+        const payload = ticket.getPayload();
 
         if (!payload || !payload.email) {
-            res.status(400).json({ message: 'Invalid Google Token' });
+            res.status(400).json({ message: 'Invalid Google Token Payload' });
             return;
         }
 
@@ -198,6 +206,11 @@ const googleLogin = async (req: Request, res: Response) => {
         let user = await User.findOne({ email });
 
         if (user) {
+            if (user.isSuspended) {
+                res.status(403).json({ message: 'Your account has been suspended' });
+                return;
+            }
+
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -211,9 +224,10 @@ const googleLogin = async (req: Request, res: Response) => {
             user = await User.create({
                 name,
                 email,
-                password: sub,
+                password: sub, // Use Google Sub as temporary password
                 profileImage: picture,
-                isGoogleUser: true
+                isGoogleUser: true,
+                role: 'user'
             });
 
             res.status(201).json({
@@ -221,14 +235,14 @@ const googleLogin = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isNewUser: true,
+                isNewUser: true, // Triggers profile completion in app
                 token: generateToken((user._id as unknown) as string),
             });
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Google Auth Error:', error);
-        res.status(400).json({ message: 'Google Auth Failed' });
+        res.status(400).json({ message: 'Google Auth Failed: ' + error.message });
     }
 };
 

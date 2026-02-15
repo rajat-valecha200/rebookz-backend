@@ -26,7 +26,7 @@ const userSchema: Schema = new Schema(
         name: { type: String, default: 'New User' },
         email: { type: String, unique: true, sparse: true },
         password: { type: String, required: false }, // optional for now if using social auth or placeholder
-        phone: { type: String, required: true, unique: true },
+        phone: { type: String, required: false, unique: true, sparse: true },
         role: { type: String, enum: ['user', 'admin'], default: 'user' },
         profileImage: { type: String },
         rating: { type: Number, default: 0 },
