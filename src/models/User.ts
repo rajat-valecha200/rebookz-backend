@@ -48,14 +48,14 @@ const userSchema: Schema = new Schema(
 );
 
 // Pre-save hook to handle unique/sparse fields
-userSchema.pre('save', function (next) {
-    if ((this as any).phone === null || (this as any).phone === '') {
-        (this as any).phone = undefined;
+userSchema.pre('save', function () {
+    const user = this as any;
+    if (user.phone === null || user.phone === '') {
+        user.phone = undefined;
     }
-    if ((this as any).email === null || (this as any).email === '') {
-        (this as any).email = undefined;
+    if (user.email === null || user.email === '') {
+        user.email = undefined;
     }
-    next();
 });
 
 export default mongoose.model<IUser>('User', userSchema);
