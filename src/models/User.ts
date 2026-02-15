@@ -13,6 +13,8 @@ export interface IUser extends Document {
     otpExpires?: Date;
     isSuspended?: boolean;
     isGoogleUser?: boolean;
+    isAppleUser?: boolean;
+    appleId?: string;
     pushToken?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -35,6 +37,8 @@ const userSchema: Schema = new Schema(
         otpExpires: { type: Date },
         isSuspended: { type: Boolean, default: false },
         isGoogleUser: { type: Boolean, default: false },
+        isAppleUser: { type: Boolean, default: false },
+        appleId: { type: String, unique: true, sparse: true },
         pushToken: { type: String },
         dob: { type: Date },
         gender: { type: String, enum: ['male', 'female', 'other'] },

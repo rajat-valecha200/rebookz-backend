@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import generateToken from '../utils/generateToken';
 import { OAuth2Client } from 'google-auth-library';
+import appleSignin from 'apple-signin-auth';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -190,7 +191,8 @@ const googleLogin = async (req: Request, res: Response) => {
             idToken: token,
             audience: [
                 process.env.GOOGLE_CLIENT_ID!, // Web Client ID
-                "423734366253-09dmu1gkn6p20iasn0ch1g6lfc6aapqa.apps.googleusercontent.com" // Android Client ID
+                "423734366253-09dmu1gkn6p20iasn0ch1g6lfc6aapqa.apps.googleusercontent.com", // Android Client ID
+                "423734366253-0ttcktlpj3a3n5rg5sup9j5re6nqi4kc.apps.googleusercontent.com" // iOS Client ID
             ],
         });
 
@@ -273,4 +275,64 @@ const dummyLogin = async (req: Request, res: Response) => {
     }
 };
 
-export { authUser, registerUser, sendOtp, verifyOtp, googleLogin, dummyLogin };
+const appleLogin = async (req: Request, res: Response) => {
+    const { token, user: appleUser } = req.body;
+
+    try {
+        const { sub: appleId, email } = await appleSignin.verifyIdToken(token, {
+            audience: process.env.APPLE_CLIENT_ID, // Service ID or App ID
+            ignoreExpiration: false,
+        });
+
+        let user = await User.findOne({
+            $or: [{ appleId }, { email: email }]
+        });
+
+        if (user) {
+            if (user.isSuspended) {
+                res.status(403).json({ message: 'Your account has been suspended' });
+                return;
+            }
+
+            // Link appleId if it's a match by email but appleId not yet set
+            if (!user.appleId) {
+                user.appleId = appleId;
+                await user.save();
+            }
+
+            res.json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                isNewUser: false,
+                token: generateToken((user._id as unknown) as string),
+            });
+        } else {
+            // New User flow
+            user = await User.create({
+                appleId,
+                email,
+                name: appleUser?.name || 'Apple User',
+                password: appleId, // Use appleId as temporary password
+                isAppleUser: true,
+                role: 'user'
+            });
+
+            res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isNewUser: true,
+                token: generateToken((user._id as unknown) as string),
+            });
+        }
+    } catch (error: any) {
+        console.error('Apple Auth Error:', error);
+        res.status(400).json({ message: 'Apple Auth Failed: ' + error.message });
+    }
+};
+
+export { authUser, registerUser, sendOtp, verifyOtp, googleLogin, appleLogin, dummyLogin };
