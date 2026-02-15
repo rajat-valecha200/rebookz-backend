@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import generateToken from '../utils/generateToken';
 import { OAuth2Client } from 'google-auth-library';
-import appleSignin from 'apple-signin-auth';
+import { verifyIdToken } from 'apple-signin-auth';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -279,7 +279,7 @@ const appleLogin = async (req: Request, res: Response) => {
     const { token, user: appleUser } = req.body;
 
     try {
-        const { sub: appleId, email } = await appleSignin.verifyIdToken(token, {
+        const { sub: appleId, email } = await verifyIdToken(token, {
             audience: process.env.APPLE_CLIENT_ID, // Service ID or App ID
             ignoreExpiration: false,
         });
@@ -295,8 +295,8 @@ const appleLogin = async (req: Request, res: Response) => {
             }
 
             // Link appleId if it's a match by email but appleId not yet set
-            if (!user.appleId) {
-                user.appleId = appleId;
+            if (!(user as any).appleId) {
+                (user as any).appleId = appleId;
                 await user.save();
             }
 
@@ -318,7 +318,7 @@ const appleLogin = async (req: Request, res: Response) => {
                 password: appleId, // Use appleId as temporary password
                 isAppleUser: true,
                 role: 'user'
-            });
+            } as any);
 
             res.status(201).json({
                 _id: user._id,
