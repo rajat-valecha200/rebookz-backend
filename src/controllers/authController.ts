@@ -279,16 +279,19 @@ const appleLogin = async (req: Request, res: Response) => {
     const { token, user: appleUser } = req.body;
 
     try {
+        console.log('Verifying Apple Token for audience:', process.env.APPLE_CLIENT_ID);
         const { sub: appleId, email } = await verifyIdToken(token, {
             audience: process.env.APPLE_CLIENT_ID, // Service ID or App ID
             ignoreExpiration: false,
         });
-
+        console.log('Apple Token Verified. Sub:', appleId, 'Email:', email);
+        // ... (rest of the code remains the same internally)
         let user = await User.findOne({
             $or: [{ appleId }, { email: email }]
         });
 
         if (user) {
+            console.log('Existing user found for Apple Login:', user.email);
             if (user.isSuspended) {
                 res.status(403).json({ message: 'Your account has been suspended' });
                 return;
@@ -296,6 +299,7 @@ const appleLogin = async (req: Request, res: Response) => {
 
             // Link appleId if it's a match by email but appleId not yet set
             if (!(user as any).appleId) {
+                console.log('Linking appleId to existing email-matched user');
                 (user as any).appleId = appleId;
                 await user.save();
             }
@@ -310,6 +314,7 @@ const appleLogin = async (req: Request, res: Response) => {
                 token: generateToken((user._id as unknown) as string),
             });
         } else {
+            console.log('Creating new user for Apple Login');
             // New User flow
             user = await User.create({
                 appleId,
@@ -330,7 +335,7 @@ const appleLogin = async (req: Request, res: Response) => {
             });
         }
     } catch (error: any) {
-        console.error('Apple Auth Error:', error);
+        console.error('Apple Auth Error Detail:', error);
         res.status(400).json({ message: 'Apple Auth Failed: ' + error.message });
     }
 };
