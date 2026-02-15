@@ -47,4 +47,15 @@ const userSchema: Schema = new Schema(
     { timestamps: true }
 );
 
+// Pre-save hook to handle unique/sparse fields
+userSchema.pre('save', function (next) {
+    if ((this as any).phone === null || (this as any).phone === '') {
+        (this as any).phone = undefined;
+    }
+    if ((this as any).email === null || (this as any).email === '') {
+        (this as any).email = undefined;
+    }
+    next();
+});
+
 export default mongoose.model<IUser>('User', userSchema);
