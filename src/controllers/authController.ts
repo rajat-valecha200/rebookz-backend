@@ -279,29 +279,46 @@ const appleLogin = async (req: Request, res: Response) => {
     const { token, user: appleUser } = req.body;
 
     try {
-        if (!process.env.APPLE_CLIENT_ID) {
-            console.error('CRITICAL: APPLE_CLIENT_ID is not defined in .env');
-            return res.status(500).json({ message: 'Backend configuration error: Missing APPLE_CLIENT_ID' });
+        if (!token) {
+            return res.status(400).json({ message: 'Identity Token is required' });
         }
-        console.log('Verifying Apple Token for audience:', process.env.APPLE_CLIENT_ID);
+
+        // Manually decode token for debugging (no verification)
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+            try {
+                const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+                console.log('DEBUG: Received Apple Token Payload:', JSON.stringify(payload, null, 2));
+                console.log('DEBUG: Current server APPLE_CLIENT_ID:', process.env.APPLE_CLIENT_ID);
+            } catch (e) {
+                console.error('DEBUG: Failed to decode token payload for logging');
+            }
+        }
+
+        const audience = [
+            'host.exp.Exponent', // Always allow Expo Go during development
+        ];
+        if (process.env.APPLE_CLIENT_ID) {
+            audience.push(process.env.APPLE_CLIENT_ID);
+        }
+
+        console.log('Verifying Apple Token for audiences:', audience);
+
         const { sub: appleId, email } = await verifyIdToken(token, {
-            audience: [
-                process.env.APPLE_CLIENT_ID!,
-                'host.exp.Exponent' // Allow Expo Go for development
-            ],
+            audience,
             ignoreExpiration: false,
         });
-        console.log('Apple Token Verified. Sub:', appleId, 'Email:', email);
-        // ... (rest of the code remains the same internally)
+
+        console.log('Apple Token Verified successfully. Sub:', appleId, 'Email:', email);
+
         let user = await User.findOne({
             $or: [{ appleId }, { email: email }]
         });
 
         if (user) {
-            console.log('Existing user found for Apple Login:', user.email);
+            console.log('Existing user found for Apple Login:', user.email || user.phone);
             if (user.isSuspended) {
-                res.status(403).json({ message: 'Your account has been suspended' });
-                return;
+                return res.status(403).json({ message: 'Your account has been suspended' });
             }
 
             // Link appleId if it's a match by email but appleId not yet set
@@ -342,7 +359,8 @@ const appleLogin = async (req: Request, res: Response) => {
             });
         }
     } catch (error: any) {
-        console.error('Apple Auth Error Detail:', error);
+        console.error('CRITICAL: Apple Auth Verification Error:', error);
+        if (error.stack) console.error(error.stack);
         res.status(400).json({ message: 'Apple Auth Failed: ' + error.message });
     }
 };
