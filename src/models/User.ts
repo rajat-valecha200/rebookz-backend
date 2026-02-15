@@ -4,7 +4,7 @@ export interface IUser extends Document {
     name: string;
     email?: string;
     password?: string;
-    phone: string;
+    phone?: string;
     role: 'user' | 'admin';
     profileImage?: string;
     rating?: number;
@@ -48,14 +48,17 @@ const userSchema: Schema = new Schema(
 );
 
 // Pre-save hook to handle unique/sparse fields
-userSchema.pre('save', function () {
+userSchema.pre('save', function (next) {
     const user = this as any;
+    // VERY IMPORTANT: null is treated as a duplicate in MongoDB unique indexes.
+    // undefined is ignored by sparse indexes.
     if (user.phone === null || user.phone === '') {
         user.phone = undefined;
     }
     if (user.email === null || user.email === '') {
         user.email = undefined;
     }
+    next();
 });
 
 export default mongoose.model<IUser>('User', userSchema);
