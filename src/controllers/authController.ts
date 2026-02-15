@@ -285,7 +285,10 @@ const appleLogin = async (req: Request, res: Response) => {
         }
         console.log('Verifying Apple Token for audience:', process.env.APPLE_CLIENT_ID);
         const { sub: appleId, email } = await verifyIdToken(token, {
-            audience: process.env.APPLE_CLIENT_ID, // Service ID or App ID
+            audience: [
+                process.env.APPLE_CLIENT_ID!,
+                'host.exp.Exponent' // Allow Expo Go for development
+            ],
             ignoreExpiration: false,
         });
         console.log('Apple Token Verified. Sub:', appleId, 'Email:', email);
