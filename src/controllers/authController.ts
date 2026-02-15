@@ -279,6 +279,10 @@ const appleLogin = async (req: Request, res: Response) => {
     const { token, user: appleUser } = req.body;
 
     try {
+        if (!process.env.APPLE_CLIENT_ID) {
+            console.error('CRITICAL: APPLE_CLIENT_ID is not defined in .env');
+            return res.status(500).json({ message: 'Backend configuration error: Missing APPLE_CLIENT_ID' });
+        }
         console.log('Verifying Apple Token for audience:', process.env.APPLE_CLIENT_ID);
         const { sub: appleId, email } = await verifyIdToken(token, {
             audience: process.env.APPLE_CLIENT_ID, // Service ID or App ID
