@@ -64,6 +64,15 @@ const createBook = async (req: AuthRequest, res: Response) => {
         return;
     }
 
+    // Enforce profile completion (Phone number is mandatory for listing books)
+    if (!req.user.phone) {
+        res.status(403).json({
+            message: 'Please complete your profile (add phone number) before listing books',
+            code: 'INCOMPLETE_PROFILE'
+        });
+        return;
+    }
+
     const {
         title,
         author,
