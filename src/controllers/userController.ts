@@ -70,6 +70,7 @@ const updateProfile = async (req: AuthRequest, res: Response) => {
     if (user) {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
+        user.phone = req.body.phone || user.phone;
         if (req.body.age) user.age = req.body.age;
         if (req.body.dob) {
             user.dob = req.body.dob;

@@ -20,7 +20,11 @@ const getBooks = async (req: Request, res: Response) => {
     const filterConditions: any = { ...keyword };
 
     if (req.query.category) {
-        filterConditions.category = req.query.category;
+        const categoryRegex = new RegExp(`^${(req.query.category as string).trim()}$`, 'i');
+        filterConditions.$or = [
+            { category: categoryRegex },
+            { subcategory: categoryRegex }
+        ];
     }
     if (req.query.type) {
         filterConditions.type = req.query.type;

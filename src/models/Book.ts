@@ -7,7 +7,7 @@ export interface IBook extends Document {
     category: string;
     subcategory?: string;
     condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
-    type: 'sell' | 'rent' | 'swap' | 'donate';
+    type: 'sell' | 'donate';
     price: number;
     images: string[];
     seller: mongoose.Types.ObjectId;
@@ -17,7 +17,7 @@ export interface IBook extends Document {
         address: string;
     };
     isAvailable: boolean;
-    status: 'available' | 'sold' | 'rented';
+    status: 'available' | 'sold';
     distance?: number; // Calculated field usually
     // New Fields for Textbook/School support
     school?: string;
@@ -54,7 +54,7 @@ const bookSchema: Schema = new Schema(
             address: { type: String },
         },
         isAvailable: { type: Boolean, default: true },
-        status: { type: String, enum: ['available', 'sold', 'rented'], default: 'available' },
+        status: { type: String, enum: ['available', 'sold'], default: 'available' },
         // New Schema Fields
         school: { type: String },
         board: { type: String },

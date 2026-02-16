@@ -22,7 +22,13 @@ export const getMobileBookFeed = async (req: Request, res: Response) => {
             if (maxPrice) query.price.$lte = parseFloat(maxPrice as string);
         }
         if (condition) query.condition = condition;
-        if (category) query.category = category;
+        if (req.query.category) {
+            const categoryRegex = new RegExp(`^${(req.query.category as string).trim()}$`, 'i');
+            query.$or = [
+                { category: categoryRegex },
+                { subcategory: categoryRegex }
+            ];
+        }
 
         let books;
         let total = 0;
