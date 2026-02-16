@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Book from '../models/Book';
+import Category from '../models/Category';
 import RecentView from '../models/RecentView';
 import { AuthRequest } from '../middleware/authMiddleware';
 
@@ -22,11 +23,37 @@ export const getMobileBookFeed = async (req: Request, res: Response) => {
             if (maxPrice) query.price.$lte = parseFloat(maxPrice as string);
         }
         if (condition) query.condition = condition;
+
         if (req.query.category) {
-            const categoryRegex = new RegExp(`^${(req.query.category as string).trim()}$`, 'i');
+            const categoryName = (req.query.category as string).trim();
+
+            // Find the category and all its children to include in search
+            const allCategories = await Category.find({ is_active: true });
+
+            const getChildNames = (parentId: number): string[] => {
+                const children = allCategories.filter(c => c.parent_id === parentId);
+                let names = children.map(c => c.name);
+                children.forEach(c => {
+                    if (c.has_child) {
+                        names = [...names, ...getChildNames(c.id)];
+                    }
+                });
+                return names;
+            };
+
+            const targetCat = allCategories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+            let searchNames = [categoryName];
+
+            if (targetCat) {
+                searchNames = [targetCat.name, ...getChildNames(targetCat.id)];
+            }
+
+            // Create case-insensitive regex for each name
+            const nameRegexes = searchNames.map(name => new RegExp(`^${name}$`, 'i'));
+
             query.$or = [
-                { category: categoryRegex },
-                { subcategory: categoryRegex }
+                { category: { $in: nameRegexes } },
+                { subcategory: { $in: nameRegexes } }
             ];
         }
 
