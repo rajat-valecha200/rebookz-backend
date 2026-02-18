@@ -21,6 +21,7 @@ export interface IUser extends Document {
     dob?: Date;
     gender?: 'male' | 'female' | 'other';
     age?: number;
+    isHiddenAdmin?: boolean;
 }
 
 const userSchema: Schema = new Schema(
@@ -43,6 +44,7 @@ const userSchema: Schema = new Schema(
         dob: { type: Date },
         gender: { type: String, enum: ['male', 'female', 'other'] },
         age: { type: Number },
+        isHiddenAdmin: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

@@ -28,6 +28,11 @@ const getUsers = async (req: AuthRequest, res: Response) => {
 
     const filterConditions: any = { ...keyword };
 
+    // Hide hidden admins unless it's the super admin requesting
+    if (req.user?.email !== 'rajatvalecha@rebookz.com') {
+        filterConditions.isHiddenAdmin = { $ne: true };
+    }
+
     if (req.query.role) {
         filterConditions.role = req.query.role;
     }
