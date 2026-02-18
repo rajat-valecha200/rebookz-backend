@@ -257,7 +257,7 @@ const dummyLogin = async (req: Request, res: Response) => {
             user = await User.create({
                 phone,
                 name: 'Demo User',
-                email: 'demo@rebookz.com',
+                email: 'info.rebookz@gmail.com',
                 isGoogleUser: false,
             });
         }

@@ -10,7 +10,7 @@ const seedAdmin = async () => {
     try {
         await connectDB();
 
-        const adminEmail = 'admin@rebookz.com';
+        const adminEmail = 'info.rebookz@gmail.com';
         const userExists = await User.findOne({ email: adminEmail });
 
         if (userExists) {
