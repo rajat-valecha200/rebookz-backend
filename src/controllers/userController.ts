@@ -82,14 +82,23 @@ const updateProfile = async (req: AuthRequest, res: Response) => {
             // Calculate age
             const today = new Date();
             const birthDate = new Date(req.body.dob);
-            let ageCalc = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                ageCalc--;
+
+            if (!isNaN(birthDate.getTime())) {
+                let ageCalc = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    ageCalc--;
+                }
+                if (!isNaN(ageCalc)) {
+                    user.age = ageCalc;
+                }
             }
-            user.age = ageCalc;
         }
-        if (req.body.age) user.age = req.body.age; // Allow manual override but dob takes precedence or adds consistency
+
+        // Only override age if it's a valid number and provided
+        if (req.body.age !== undefined && req.body.age !== null && !isNaN(Number(req.body.age))) {
+            user.age = Number(req.body.age);
+        }
         if (req.body.gender) user.gender = req.body.gender;
         if (req.body.pushToken) user.pushToken = req.body.pushToken;
 
