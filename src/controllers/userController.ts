@@ -124,9 +124,12 @@ const createUser = async (req: AuthRequest, res: Response) => {
 
     const { name, email, phone, password, role } = req.body;
 
-    const userExists = await User.findOne({
-        $or: [{ email }, { phone }]
-    });
+    const query: any = { email };
+    if (phone) {
+        query.$or = [{ email }, { phone }];
+    }
+
+    const userExists = await User.findOne(query);
 
     if (userExists) {
         res.status(400).json({ message: 'User already exists' });

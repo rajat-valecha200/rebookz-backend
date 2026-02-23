@@ -151,7 +151,7 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
-            isNewUser: !user.email || (!user.dob && !user.age),
+            isNewUser: user.name === 'New User' || user.name === 'Demo User',
         });
         return;
     }
@@ -175,7 +175,7 @@ const verifyOtp = async (req: Request, res: Response) => {
             phone: user.phone,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
-            isNewUser: !user.email || (!user.dob && !user.age), // Flag to trigger onboarding
+            isNewUser: user.name === 'New User' || !user.email, // Flag to trigger onboarding
         });
     } else {
         res.status(400).json({ message: 'Invalid OTP' });
@@ -238,7 +238,7 @@ const googleLogin = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isNewUser: true, // Triggers profile completion in app
+                isNewUser: user.name === 'New User' || user.name === 'Demo User',
                 token: generateToken((user._id as unknown) as string),
             });
         }
@@ -268,7 +268,7 @@ const dummyLogin = async (req: Request, res: Response) => {
             email: user.email,
             role: user.role,
             token: generateToken((user._id as unknown) as string),
-            isNewUser: false,
+            isNewUser: user.name === 'New User' || user.name === 'Demo User',
         });
     } catch (error) {
         console.error('Dummy Login Error:', error);
