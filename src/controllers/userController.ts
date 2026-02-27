@@ -120,7 +120,22 @@ const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export { getUsers, deleteUser, suspendUser, updateProfile, toggleFavorite, getFavorites, createUser };
+// @desc    Delete own user account
+// @route   DELETE /api/users/profile
+// @access  Private
+const deleteSelfAccount = async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
+
+    if (user) {
+        // TODO: Consider deleting user's books and other related data
+        await user.deleteOne();
+        res.json({ message: 'Account deleted successfully' });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};
+
+export { getUsers, deleteUser, suspendUser, updateProfile, toggleFavorite, getFavorites, createUser, deleteSelfAccount };
 
 // @desc    Create User (Admin)
 // @route   POST /api/users
