@@ -357,7 +357,7 @@ const appleLogin = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isNewUser: true,
+                isNewUser: !user.name || user.name === 'Apple User' || user.name === 'New User',
                 token: generateToken((user._id as unknown) as string),
             });
         }
