@@ -33,6 +33,19 @@ export const getAppSettings = async (req: Request, res: Response) => {
             });
         }
 
+        // Fetch Force Update configuration
+        let forceUpdateConfig = await Config.findOne({ key: 'forceUpdate' });
+        if (!forceUpdateConfig) {
+            forceUpdateConfig = await Config.create({
+                key: 'forceUpdate',
+                value: {
+                    ios: { requiredVersion: '1.0.0', storeUrl: '' },
+                    android: { requiredVersion: '1.0.0', storeUrl: '' }
+                },
+                description: 'Force update required versions and store URLs'
+            });
+        }
+
         // Determine if dummy login is allowed for this specific OS and Version
         let allowDummyLogin = false; // Default off
         if (os && version) {
@@ -44,6 +57,8 @@ export const getAppSettings = async (req: Request, res: Response) => {
 
         res.json({
             regions: regionsConfig.value,
+            versionControls: versionConfig.value,
+            forceUpdate: forceUpdateConfig.value,
             allowDummyLogin
         });
 
@@ -56,7 +71,7 @@ export const getAppSettings = async (req: Request, res: Response) => {
 // Update App Settings (Admin Only)
 export const updateAppSettings = async (req: Request, res: Response) => {
     try {
-        const { regions, versionControls } = req.body;
+        const { regions, versionControls, forceUpdate } = req.body;
 
         if (regions) {
             await Config.findOneAndUpdate({ key: 'regions' }, { value: regions }, { upsert: true });
@@ -64,6 +79,10 @@ export const updateAppSettings = async (req: Request, res: Response) => {
 
         if (versionControls) {
             await Config.findOneAndUpdate({ key: 'versionControls' }, { value: versionControls }, { upsert: true });
+        }
+
+        if (forceUpdate) {
+            await Config.findOneAndUpdate({ key: 'forceUpdate' }, { value: forceUpdate }, { upsert: true });
         }
 
         res.json({ message: 'Settings updated successfully' });
