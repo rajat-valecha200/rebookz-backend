@@ -24,6 +24,7 @@ export interface IBook extends Document {
     board?: string; // e.g. CBSE, ICSE, Ministry
     classLevel?: string; // e.g. Grade 10, Year 12
     sellerPhone?: string; // Custom seller phone number
+    region?: string; // Optional: To support app-wide regional content
     createdAt: Date;
     updatedAt: Date;
 }
@@ -60,6 +61,7 @@ const bookSchema: Schema = new Schema(
         board: { type: String },
         classLevel: { type: String },
         sellerPhone: { type: String }, // NEW
+        region: { type: String, default: 'SA' }, // Defaulting fallback for backward compatibility
     },
     { timestamps: true }
 );

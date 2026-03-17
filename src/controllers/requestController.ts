@@ -13,14 +13,16 @@ export const createRequest = async (req: AuthRequest, res: Response) => {
         return;
     }
 
-    const { title, description, category } = req.body;
+    const { title, description, category, region, requesterPhone } = req.body;
 
     const request = await BookRequest.create({
         title,
         description,
         category,
         user: req.user._id,
-        status: 'active'
+        status: 'active',
+        region: region || 'SA', // Fallback
+        requesterPhone: requesterPhone
     });
 
     // Broadcast Notification
@@ -48,9 +50,13 @@ export const getRequests = async (req: Request, res: Response) => {
     if (req.query.user) {
         filter.user = req.query.user;
     }
+    if (req.query.region) {
+        filter.region = req.query.region;
+    }
 
     const requests = await BookRequest.find(filter)
         .populate('user', 'name profileImage') // Show who requested
+        .populate('fulfilledBy', 'title images price type') // Details of the fulfilling book
         .sort({ createdAt: -1 });
 
     res.json(requests);
@@ -61,7 +67,9 @@ export const getRequests = async (req: Request, res: Response) => {
 // @access  Public
 export const getRequestById = async (req: Request, res: Response) => {
     try {
-        const request = await BookRequest.findById(req.params.id).populate('user', 'name profileImage phone');
+        const request = await BookRequest.findById(req.params.id)
+            .populate('user', 'name profileImage phone')
+            .populate('fulfilledBy', 'title images price type _id');
         if (!request) {
             res.status(404).json({ message: 'Request not found' });
             return;

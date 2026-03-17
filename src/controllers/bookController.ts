@@ -58,6 +58,11 @@ const getBooks = async (req: Request, res: Response) => {
     if (req.query.status) {
         filterConditions.status = req.query.status;
     }
+    // Backward compatibility: If no region specified, we might not filter or filter by fallback SA
+    // But allowing undefined region to fetch all if admin, or filtering for standard users.
+    if (req.query.region) {
+        filterConditions.region = req.query.region;
+    }
 
     const pageSize = parseInt(req.query.limit as string) || 10;
     const page = parseInt(req.query.page as string) || 1;
@@ -117,7 +122,9 @@ const createBook = async (req: AuthRequest, res: Response) => {
         school,
         board,
         classLevel,
-        sellerPhone
+        sellerPhone,
+        region,
+        fulfillRequestId
     } = req.body;
 
     if (!images || !Array.isArray(images) || images.length === 0) {
@@ -153,10 +160,25 @@ const createBook = async (req: AuthRequest, res: Response) => {
         board,
         classLevel,
         sellerPhone,
+        region: region || 'SA', // Fallback for backward compatibility
         isAvailable: true,
     });
 
     const createdBook = await book.save();
+
+    // If fulfilling a request
+    if (fulfillRequestId) {
+        try {
+            const BookRequest = require('../models/BookRequest').default;
+            await BookRequest.findByIdAndUpdate(fulfillRequestId, {
+                status: 'fulfilled',
+                fulfilledBy: createdBook._id
+            });
+        } catch (err) {
+            console.error('Error auto-fulfilling request:', err);
+        }
+    }
+
     res.status(201).json(createdBook);
 };
 

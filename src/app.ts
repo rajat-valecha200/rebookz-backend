@@ -11,6 +11,7 @@ import mobileRoutes from './routes/mobileRoutes';
 import requestRoutes from './routes/requestRoutes';
 import supportRoutes from './routes/supportRoutes';
 import feedbackRoutes from './routes/feedbackRoutes';
+import configRoutes from './routes/configRoutes';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/mobile', mobileRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/config', configRoutes);
 
 // Make uploads folder static
 import path from 'path';
