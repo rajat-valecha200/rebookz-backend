@@ -9,12 +9,20 @@ import { AuthRequest } from '../middleware/authMiddleware';
 // @access  Public
 export const getMobileBookFeed = async (req: Request, res: Response) => {
     try {
-        const { lat, lng, radius, limit, page, minPrice, maxPrice, condition, category } = req.query;
+        const { lat, lng, radius, limit, page, minPrice, maxPrice, condition, category, region } = req.query;
         const pageNum = parseInt(page as string) || 1;
         const limitNum = parseInt(limit as string) || 10;
         const maxDistance = parseFloat(radius as string) || 50000;
 
         let query: any = { isAvailable: true };
+
+        // Regional isolation: Treat missing region as 'SA' by default
+        const targetRegion = (region as string) || 'SA';
+        query.$or = [{ region: targetRegion }];
+        if (targetRegion === 'SA') {
+            query.$or.push({ region: { $exists: false } });
+            query.$or.push({ region: null });
+        }
 
         // Filters
         if (minPrice || maxPrice) {
@@ -177,11 +185,18 @@ export const getRecentlyViewedBooks = async (req: AuthRequest, res: Response) =>
 // @access  Public
 export const getFreeBooks = async (req: Request, res: Response) => {
     try {
-        const { lat, lng, limit, page } = req.query;
+        const { lat, lng, limit, page, region } = req.query;
         const pageNum = parseInt(page as string) || 1;
         const limitNum = parseInt(limit as string) || 20;
 
         let query: any = { isAvailable: true, price: 0 };
+        // Regional isolation: Treat missing region as 'SA' by default
+        const targetRegion = (region as string) || 'SA';
+        query.$or = [{ region: targetRegion }];
+        if (targetRegion === 'SA') {
+            query.$or.push({ region: { $exists: false } });
+            query.$or.push({ region: null });
+        }
         let books;
         let total = 0;
 

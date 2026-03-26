@@ -58,10 +58,17 @@ const getBooks = async (req: Request, res: Response) => {
     if (req.query.status) {
         filterConditions.status = req.query.status;
     }
-    // Backward compatibility: If no region specified, we might not filter or filter by fallback SA
-    // But allowing undefined region to fetch all if admin, or filtering for standard users.
-    if (req.query.region) {
-        filterConditions.region = req.query.region;
+    // Regional isolation: Default to SA if no region is provided and not an admin check
+    const regionString = (req.query.region as string) || 'SA';
+
+    filterConditions.$or = [
+        { region: regionString },
+    ];
+
+    // If mimicking SA, also show legacy data (null/undefined region)
+    if (regionString === 'SA') {
+        filterConditions.$or.push({ region: { $exists: false } });
+        filterConditions.$or.push({ region: null });
     }
 
     const pageSize = parseInt(req.query.limit as string) || 10;
@@ -160,9 +167,12 @@ const createBook = async (req: AuthRequest, res: Response) => {
         board,
         classLevel,
         sellerPhone,
-        region: region || 'SA', // Fallback for backward compatibility
+        region: region || 'SA', 
         isAvailable: true,
     });
+
+    // Ensure price is at least 0
+    if (book.price < 0) book.price = 0;
 
     const createdBook = await book.save();
 

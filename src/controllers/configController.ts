@@ -14,9 +14,32 @@ export const getAppSettings = async (req: Request, res: Response) => {
                 key: 'regions',
                 value: [
                     { countryCode: 'SA', name: 'Saudi Arabia', currencySymbol: 'SAR', isActive: true },
-                    { countryCode: 'IN', name: 'India', currencySymbol: '₹', isActive: false }
+                    { countryCode: 'IN', name: 'India', currencySymbol: '₹', isActive: true },
+                    { countryCode: 'US', name: 'United States', currencySymbol: '$', isActive: false }
                 ],
                 description: 'Active regions and their localized data'
+            });
+        } else {
+            // Ensure US exists in existing data
+            const regions = regionsConfig.value;
+            if (!regions.find((r: any) => r.countryCode === 'US')) {
+                regions.push({ countryCode: 'US', name: 'United States', currencySymbol: '$', isActive: false });
+                await Config.findOneAndUpdate({ key: 'regions' }, { value: regions });
+                regionsConfig.value = regions;
+            }
+        }
+
+        // Fetch OS-specific Allowed Regions
+        let allowedRegionsConfig = await Config.findOne({ key: 'allowedRegions' });
+        if (!allowedRegionsConfig) {
+            allowedRegionsConfig = await Config.create({
+                key: 'allowedRegions',
+                value: {
+                    android: ['SA', 'IN'], // Android allows both
+                    ios: ['SA'],           // iOS only Saudi Arabia
+                    web: ['SA', 'IN']
+                },
+                description: 'List of country codes allowed per platform'
             });
         }
 
@@ -55,10 +78,21 @@ export const getAppSettings = async (req: Request, res: Response) => {
             }
         }
 
+        // Filter active regions based on OS if provided
+        let availableRegions = regionsConfig.value;
+        if (os && allowedRegionsConfig.value[os as string]) {
+            const allowedList = allowedRegionsConfig.value[os as string];
+            availableRegions = availableRegions.map((reg: any) => ({
+                ...reg,
+                isActive: reg.isActive && allowedList.includes(reg.countryCode)
+            }));
+        }
+
         res.json({
-            regions: regionsConfig.value,
+            regions: availableRegions,
             versionControls: versionConfig.value,
             forceUpdate: forceUpdateConfig.value,
+            allowedRegions: allowedRegionsConfig.value, // Return raw allowed regions for Admin
             allowDummyLogin
         });
 
@@ -71,7 +105,7 @@ export const getAppSettings = async (req: Request, res: Response) => {
 // Update App Settings (Admin Only)
 export const updateAppSettings = async (req: Request, res: Response) => {
     try {
-        const { regions, versionControls, forceUpdate } = req.body;
+        const { regions, versionControls, forceUpdate, allowedRegions } = req.body;
 
         if (regions) {
             await Config.findOneAndUpdate({ key: 'regions' }, { value: regions }, { upsert: true });
@@ -83,6 +117,10 @@ export const updateAppSettings = async (req: Request, res: Response) => {
 
         if (forceUpdate) {
             await Config.findOneAndUpdate({ key: 'forceUpdate' }, { value: forceUpdate }, { upsert: true });
+        }
+
+        if (allowedRegions) {
+            await Config.findOneAndUpdate({ key: 'allowedRegions' }, { value: allowedRegions }, { upsert: true });
         }
 
         res.json({ message: 'Settings updated successfully' });

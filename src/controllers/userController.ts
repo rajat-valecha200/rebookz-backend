@@ -127,9 +127,26 @@ const deleteSelfAccount = async (req: AuthRequest, res: Response) => {
     const user = await User.findById(req.user?._id);
 
     if (user) {
-        // TODO: Consider deleting user's books and other related data
+        const userId = user._id;
+        
+        // 1. Delete user's books
+        const Book = (await import('../models/Book')).default;
+        await Book.deleteMany({ seller: userId });
+        
+        // 2. Delete user's book requests
+        const BookRequest = (await import('../models/BookRequest')).default;
+        await BookRequest.deleteMany({ user: userId });
+        
+        // 3. Delete user's recent views
+        const RecentView = (await import('../models/RecentView')).default;
+        await RecentView.deleteMany({ user: userId });
+        
+        // 4. Update other users who had this user's books in favorites (OPTIONAL, usually handled by checking book existence)
+        
+        // 5. Delete the user
         await user.deleteOne();
-        res.json({ message: 'Account deleted successfully' });
+        
+        res.json({ message: 'Account and all associated data deleted successfully' });
     } else {
         res.status(404).json({ message: 'User not found' });
     }
@@ -181,21 +198,24 @@ const createUser = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// @desc    Get User Favorites
-// @route   GET /api/users/favorites
 // @access  Private
 const getFavorites = async (req: AuthRequest, res: Response) => {
-    const user = await User.findById(req.user?._id).populate('favorites');
+    const region = (req.query.region as string) || 'SA';
+
+    const user = await User.findById(req.user?._id).populate({
+        path: 'favorites',
+        populate: { path: 'seller', select: 'name email phone' }
+    });
 
     if (user) {
-        // Need to populate more? Book -> Seller?
-        // Deep population might be needed: .populate({ path: 'favorites', populate: { path: 'seller', select: 'name' } })
-        const populatedUser = await User.findById(req.user?._id).populate({
-            path: 'favorites',
-            populate: { path: 'seller', select: 'name email phone' }
+        // Filter favorites by region, treating missing region as 'SA'
+        const filteredFavorites = (user.favorites as any[]).filter(book => {
+            if (!book) return false;
+            const bookRegion = book.region || 'SA';
+            return bookRegion === region;
         });
 
-        res.json({ favorites: populatedUser?.favorites || [] });
+        res.json({ favorites: filteredFavorites });
     } else {
         res.status(404).json({ message: 'User not found' });
     }
